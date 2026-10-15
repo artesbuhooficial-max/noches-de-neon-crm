@@ -4,6 +4,14 @@ Abrir `Noches-de-Neon.html` para probar la interfaz completa. Las fotos son Dani
 
 La pestaña **Conexiones** guarda el enlace del Google Sheet elegido. Guardar el enlace no activa la sincronización. Hay importación CSV y exportación CSV; los teléfonos duplicados se omiten. El selector de arriba cambia entre Dani y David y funciona como identidad de equipo, no como inicio de sesión individual.
 
+## Guía de venta durante las llamadas
+
+El botón **Guía de venta** abre un panel de consulta sin cambiar de contacto. Incluye tarifas de 2027, promoción, duración, logística y regalos; cuatro repertorios con Spotify y PDFs; el audio de Román, vídeos por formación/cantante, guion, mensajes y un índice de los documentos y carpetas de Drive. Permite buscar también dentro de los documentos con texto incorporado, filtrar recursos, abrir originales, copiar enlaces y solicitar una vista de archivos de Drive. La vista de Google puede requerir iniciar sesión; siempre hay enlace al original.
+
+La referencia fue consultada el 15/10/2026 y se actualiza manualmente en `catalog.js`. No hay sincronización automática con Drive. Las condiciones de 2027 aparecen junto a su fuente; los ejemplos de las calculadoras y las notas de reunión se distinguen como referencias internas con precios y distancias distintos. Los documentos originales permiten consultar las versiones completas y sus actualizaciones. Las carpetas enlazadas dan acceso al resto de sus archivos. El panel no envía mensajes, reserva fechas ni aplica descuentos automáticamente.
+
+`library.js` contiene la interfaz y `library-check.mjs` comprueba el contenido esencial, búsqueda, filtros y generación de los HTML. `build.mjs` incorpora catálogo e interfaz en las versiones local y Apps Script.
+
 ## Conectar el CRM compartido
 
 1. Usar la versión nativa de Google Sheets del CRM (el Excel en Drive debe convertirse primero con Archivo → Guardar como hoja de cálculo de Google). Abrir Extensiones → Apps Script.

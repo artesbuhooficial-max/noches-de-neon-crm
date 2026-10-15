@@ -22,6 +22,7 @@ function ageInfo(l){if(!/^\d{4}-\d{2}-\d{2}/.test(l.request_at||''))return null;
 function ageTag(l){const a=ageInfo(l);return a?tag(a.label,a.color):tag('Entrada sin fecha');}
 function eligible(l){return phoneKey(l.telefono)&&!l.owner_conflict&&l.contact_status!=='Revisar teléfono'&&!['Reserva confirmada','No interesado'].includes(l.estado)}
 function render(){
+ const call=data.leads.find(l=>activeLock(l)&&l.lock_owner===user);if($('libraryCallContext'))$('libraryCallContext').textContent=call?'En llamada: '+call.nombre+' · '+(call.lugar||'Lugar pendiente')+' · '+(call.fecha_boda||'Fecha pendiente'):'Material comercial de Noches de Neón · '+user;
  $('userSwitch').innerHTML=`<img src="${PEOPLE[user]}" alt="">${user} <span class="muted">⌄</span>`;
  $('connection').textContent=connected?'● Sheet conectado · actualización cada 15 s':config.endpoint?'● Sin conectar · abre Conexiones':'● Demo · solo este navegador';
  const leads=queueLeads(), pending=leads.filter(l=>!['Reserva confirmada','No interesado'].includes(l.estado));
