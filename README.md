@@ -4,17 +4,25 @@ Abrir `Noches-de-Neon.html` para probar la interfaz completa. Las fotos son Dani
 
 La pestaña **Conexiones** guarda el enlace del Google Sheet elegido. Guardar el enlace no activa la sincronización. Hay importación CSV y exportación CSV; los teléfonos duplicados se omiten. El selector de arriba cambia entre Dani y David y funciona como identidad de equipo, no como inicio de sesión individual.
 
-## Activar el Sheet compartido cuando esté decidido
+## Conectar el CRM compartido
 
-1. En una hoja privada de Google Sheets, abrir Extensiones → Apps Script.
+1. Usar la versión nativa de Google Sheets del CRM (el Excel en Drive debe convertirse primero con Archivo → Guardar como hoja de cálculo de Google). Abrir Extensiones → Apps Script.
 2. Copiar `Code.gs` al proyecto. Añadir un archivo HTML llamado `Index` y copiar dentro el contenido completo de `AppsScriptIndex.html` incluido.
-3. En Configuración del proyecto → Propiedades del script, añadir `SHEET_ID` (el identificador entre `/d/` y `/edit` en el enlace del Sheet) y `CRM_KEY` (una clave larga aleatoria compartida solo con Dani y David). El token de respond.io nunca se pega en la interfaz.
-4. Ejecutar `setup` una vez y autorizar acceso a esa hoja. Crea las pestañas `Contactos` y `Actividad` sin borrar otras pestañas. Para esta primera versión, `Contactos` debe respetar los encabezados de `plantilla-contactos.csv`; las columnas técnicas se conservan.
+3. Ejecutar `setup` y autorizar acceso a esa hoja. Genera `SHEET_ID` y una clave aleatoria `CRM_KEY` en Propiedades del script. Compartir esta clave solo con Daniel y David. El token de respond.io nunca se pega en la interfaz.
+4. El backend usa directamente `VENTA (SETTER Y CLOSSER)`, con sus encabezados en la fila 2. Conserva las columnas originales y añade columnas CRM al final. Crea `Actividad CRM` para el historial. Reparte los contactos sin comercial y con teléfono entre Daniel y David, manteniendo juntos los teléfonos repetidos y respetando los comerciales anteriores. Un teléfono vacío queda pendiente de revisión. La asignación inicial no significa que se haya contactado: se mantiene `Sin contactar` hasta registrar una acción.
 5. Desplegar como aplicación web, ejecutada como propietario. Usar el nivel de acceso más restrictivo que permita entrar a ambos; nunca publicar el Sheet. La clave es obligatoria incluso si el acceso de la aplicación web fuera amplio.
 6. Abrir el enlace `/exec` en ambos dispositivos. En Conexiones pegar el enlace del Sheet y la clave; la URL de conexión ya se rellena en la aplicación alojada. Guardar y pulsar Sincronizar. Recomendado usar esta app alojada en Apps Script, que llama al backend mediante `google.script.run` y evita problemas de CORS de un HTML local.
-7. Importar el CSV de contactos reales desde Conexiones. No se suben los contactos ficticios de la demo automáticamente. También podéis pegar datos en `Contactos`, manteniendo un `id` único por fila, responsable Dani/David o vacío, estado válido y revisión inicial 0.
+7. Los contactos aparecen desde la pestaña original. Las siguientes filas nuevas se detectan al sincronizar. El CSV de Conexiones permite añadir contactos con los encabezados de `plantilla-contactos.csv`. Los datos de demostración no se suben automáticamente.
 
-El backend centraliza reservas de 30 minutos con `LockService`, comprueba revisiones para evitar sobreescrituras y no permite otra llamada activa al mismo responsable. Solo el responsable puede modificar una ficha asignada. Para traspasar un contacto, su responsable lo reasigna. La cola se actualiza cada 15 segundos; cada reserva se verifica en servidor. Si pierde conexión se bloquean las mutaciones remotas. Las ediciones directas en Sheets no pasan por estos bloqueos: conviene cambiar estados y responsables desde la app y reservar la hoja para carga y consulta.
+El backend centraliza reservas de 30 minutos con `LockService`. Bloquea todas las filas de un mismo teléfono, aunque aparezca con prefijos distintos. Comprueba la revisión y una huella de los datos para detectar cambios directos en Sheets. Solo el responsable puede modificar una ficha asignada. La cola se actualiza cada 15 segundos y bloquea las mutaciones sin conexión. La identidad Dani/David es una selección compartida de equipo, no una autenticación individual.
+
+Al terminar una llamada se registra uno de estos resultados: Atendida, No contesta, Ocupado, Volver a llamar o Teléfono incorrecto. Una llamada sin respuesta queda como `Intentado`. La próxima llamada y las notas se guardan en la misma hoja. Los teléfonos repetidos se muestran como una sola ficha en la cola y conservan sus filas de origen.
+
+## Fecha de entrada desde Bodas.net
+
+La exportación de solicitudes contiene `DÍA` con fecha y hora de entrada. El servidor admite la acción autenticada `enrich`, con un array `requests` de objetos `request_at` (YYYY-MM-DDTHH:mm:ss, hora de Madrid), `telefono`, `email`, `fecha_boda` y `bodas_estado`. La importación busca por teléfono y después por correo, contrasta la fecha de boda y no crea contactos nuevos. Si hay varias solicitudes para la misma boda conserva la fecha de entrada más antigua. Las coincidencias con fechas de boda diferentes se dejan para revisión.
+
+La app muestra fecha y días transcurridos. Azul: 0–2 días; ámbar: 3–7; rojo: más de 7. La columna añadida `Fecha solicitud Bodas.net` usa el mismo criterio con formato condicional en Sheets. El color representa antigüedad de entrada. `Atendida` en Bodas.net se conserva como dato de origen y no acredita cuándo se envió la última respuesta.
 
 ## Etiquetas en respond.io
 
@@ -31,8 +39,8 @@ No detecta automáticamente lo que se escribe directamente en respond.io. Esa at
 - `AppsScriptIndex.html`, `Code.gs`: interfaz y backend para Google Apps Script.
 - `plantilla-contactos.csv`: encabezados compatibles con el backend.
 - `node build.mjs`: reconstruye los HTML autónomos tras editar.
-- `node check.mjs`: comprueba reservas, revisiones obsoletas, duplicados, responsables, registro de actividad, CSV y render inicial con servicios simulados.
+- `node check.mjs`: comprueba reparto, reservas, revisiones, cambios directos en Sheets, duplicados, responsables, historial, cruce de fechas, CSV y render inicial con servicios simulados.
 - `node server.mjs`: vista local en http://127.0.0.1:4173.
 
-No se ha publicado con Sites porque sus herramientas de creación y despliegue no están disponibles en esta sesión. No se ha configurado ninguna cuenta real de Google ni respond.io.
+El repositorio no contiene contactos reales, enlaces privados del CRM, claves ni tokens. Los archivos privados de preparación quedan en `.local/`, excluido de Git.
 
