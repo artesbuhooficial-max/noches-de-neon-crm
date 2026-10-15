@@ -1,5 +1,9 @@
 # Noches de Neón · Cabina de ventas
 
+Aplicación publicada: [abrir CRM compartido](https://script.google.com/macros/s/AKfycbwync77WImUjtzw022SUyzYp-7-axJwrUH5m3XpDo2yxykm1lIn0l_FQ0LIMKORZHOVQQ/exec).
+
+Requiere cuenta de Google y clave privada del equipo en **Conexiones**. La clave no está incluida en este repositorio. Seleccionar Dani o David antes de trabajar, reservar el contacto, llamar desde el teléfono mostrado y guardar el resultado, notas y próxima llamada. La guía se puede mantener abierta durante la llamada. El enlace del Sheet y el endpoint se rellenan automáticamente en la aplicación publicada.
+
 Abrir `Noches-de-Neon.html` para probar la interfaz completa. Las fotos son Dani (primera) y David (segunda). Los seis contactos iniciales son ficticios. El modo demo guarda cambios en este navegador; no coordina ordenadores distintos.
 
 La pestaña **Conexiones** guarda el enlace del Google Sheet elegido. Guardar el enlace no activa la sincronización. Hay importación CSV y exportación CSV; los teléfonos duplicados se omiten. El selector de arriba cambia entre Dani y David y funciona como identidad de equipo, no como inicio de sesión individual.
@@ -10,6 +14,8 @@ El botón **Guía de venta** abre un panel de consulta sin cambiar de contacto. 
 
 La referencia fue consultada el 15/10/2026 y se actualiza manualmente en `catalog.js`. No hay sincronización automática con Drive. Las condiciones de 2027 aparecen junto a su fuente; los ejemplos de las calculadoras y las notas de reunión se distinguen como referencias internas con precios y distancias distintos. Los documentos originales permiten consultar las versiones completas y sus actualizaciones. Las carpetas enlazadas dan acceso al resto de sus archivos. El panel no envía mensajes, reserva fechas ni aplica descuentos automáticamente.
 
+La sección Repertorios usa como presentación principal los cuatro estilos del documento «Reper Mandar novios»: Brilli Brilli, 100% Orquesta, Rockéame el Cubata y Rumbatón y Fiestón. Conserva las descripciones completas y las cuatro listas de Spotify. Los PDF y dossiers organizados en tres repertorios están agrupados como material de referencia.
+
 `library.js` contiene la interfaz y `library-check.mjs` comprueba el contenido esencial, búsqueda, filtros y generación de los HTML. `build.mjs` incorpora catálogo e interfaz en las versiones local y Apps Script.
 
 ## Conectar el CRM compartido
@@ -17,6 +23,8 @@ La referencia fue consultada el 15/10/2026 y se actualiza manualmente en `catalo
 1. Usar la versión nativa de Google Sheets del CRM (el Excel en Drive debe convertirse primero con Archivo → Guardar como hoja de cálculo de Google). Abrir Extensiones → Apps Script.
 2. Copiar `Code.gs` al proyecto. Añadir un archivo HTML llamado `Index` y copiar dentro el contenido completo de `AppsScriptIndex.html` incluido.
 3. Ejecutar `setup` y autorizar acceso a esa hoja. Genera `SHEET_ID` y una clave aleatoria `CRM_KEY` en Propiedades del script. Compartir esta clave solo con Daniel y David. El token de respond.io nunca se pega en la interfaz.
+
+La aplicación web necesita el permiso de Google Sheets para abrir por ID el CRM configurado: los métodos de contexto activo de un script vinculado [no están disponibles en una app web](https://developers.google.com/apps-script/guides/bound). La autorización se solicita al propietario; `SHEET_ID` limita la hoja utilizada por este código. La activación amplía el desplegable de Comercial para admitir Daniel y David, conservando las opciones existentes.
 4. El backend usa directamente `VENTA (SETTER Y CLOSSER)`, con sus encabezados en la fila 2. Conserva las columnas originales y añade columnas CRM al final. Crea `Actividad CRM` para el historial. Reparte los contactos sin comercial y con teléfono entre Daniel y David, manteniendo juntos los teléfonos repetidos y respetando los comerciales anteriores. Un teléfono vacío queda pendiente de revisión. La asignación inicial no significa que se haya contactado: se mantiene `Sin contactar` hasta registrar una acción.
 5. Desplegar como aplicación web, ejecutada como propietario. Usar el nivel de acceso más restrictivo que permita entrar a ambos; nunca publicar el Sheet. La clave es obligatoria incluso si el acceso de la aplicación web fuera amplio.
 6. Abrir el enlace `/exec` en ambos dispositivos. En Conexiones pegar el enlace del Sheet y la clave; la URL de conexión ya se rellena en la aplicación alojada. Guardar y pulsar Sincronizar. Recomendado usar esta app alojada en Apps Script, que llama al backend mediante `google.script.run` y evita problemas de CORS de un HTML local.

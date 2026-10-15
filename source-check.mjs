@@ -18,6 +18,12 @@ export function harness(rows){
 const row=(name,phone,owner='',stage='')=>{const r=Array(37).fill('');r[0]=owner;r[1]='Madrid';r[2]=stage;r[3]='2027-06-12';r[4]=name;r[6]=phone;r[15]='Nota original';r[20]='=1+2';return r;};
 const original=[['CRM'],['Comercial','','ESTADO','','NOMBRE CONTACTO','','TLF'],row('Histórico','600000001','Daniel','Negociación'),row('Sergio','600000002','Sergio','Pendiente de Cliente'),row('A','600000010'),row('A repetido','p:+34600000010'),row('B','600000020'),row('C','600000030'),row('Sin teléfono','')];
 const h=harness(original),{call,tables,ctx}=h,source=tables.get('VENTA (SETTER Y CLOSSER)');
+// The production dropdown initially omitted David. Preserve all existing options and validation behavior.
+ctx.SpreadsheetApp.DataValidationCriteria={VALUE_IN_LIST:'list'};
+let allowed=['Román','Daniel','Marcos','Sergio'],writtenRules;
+const rule={getCriteriaType:()=> 'list',getCriteriaValues:()=>[allowed,false],copy:()=>({requireValueInList(values,dropdown){assert.equal(dropdown,false);return {build:()=>({values,strict:true})}}})};
+ctx.prepareOwners_({getLastRow:()=>3,getRange:()=>({getDataValidations:()=>[[rule]],setDataValidations:r=>{writtenRules=r}})});
+assert.deepEqual(Array.from(writtenRules[0][0].values),['Román','Daniel','Marcos','Sergio','David']);assert.equal(writtenRules[0][0].strict,true);
 let leads=call('list').data.leads;
 assert.equal(leads.length,7);assert.equal(leads.find(l=>l.nombre==='Sergio').responsable,'Sergio');
 assert.equal(leads.find(l=>l.nombre==='Sin teléfono').responsable,'');assert.equal(leads.find(l=>l.nombre==='Sin teléfono').contact_status,'Revisar teléfono');

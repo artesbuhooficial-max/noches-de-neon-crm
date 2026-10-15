@@ -8,6 +8,8 @@ vm.runInContext(fs.readFileSync(new URL('catalog.js',import.meta.url),'utf8'),co
 const catalog=context.window.NEON_CATALOG;
 assert.deepEqual(Array.from(catalog.prices,p=>p.amount),[900,1200,1600,2000,3000]);
 assert.equal(catalog.repertoires.length,4);
+assert.match(catalog.repertoires[1].description,/pasodoble/);
+assert.match(catalog.repertoireSource,/1D6blpNkVwXNiCD3oUpiigxoTksusj1pNJSZJF7BjAdk/);
 assert.equal(catalog.resources.filter(r=>r.category==='Audio').length,1);
 assert.ok(catalog.resources.length>=100);
 assert.ok(catalog.resources.every(r=>new URL(r.url).protocol==='https:'));

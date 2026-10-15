@@ -1,4 +1,4 @@
-/** @OnlyCurrentDoc */
+/** CRM de equipo: el identificador de la única hoja de trabajo se fija en setup(). */
 const SOURCE_TAB='VENTA (SETTER Y CLOSSER)';
 const STATES=['Nuevo','Contactado','Propuesta enviada','En negociación','Reserva confirmada','No interesado'];
 const RESULTS=['Atendida','No contesta','Ocupado','Volver a llamar','Teléfono incorrecto'];
@@ -15,9 +15,19 @@ function setup(){
   p.setProperty('SHEET_ID',ss.getId());
   if(!p.getProperty('CRM_KEY'))p.setProperty('CRM_KEY',Utilities.getUuid()+Utilities.getUuid());
   if(!ss.getSheetByName('Actividad CRM'))ss.insertSheet('Actividad CRM').appendRow(['Comercial','Actividad','Fecha']);
-  const store=loadStore_(ss),n=distribute_(store.leads);flushDirty_(store);const filter=store.sheet.getFilter?.();if(filter)filter.removeColumnFilterCriteria(1);SpreadsheetApp.flush();
+  const store=loadStore_(ss);prepareOwners_(store.sheet);const n=distribute_(store.leads);flushDirty_(store);const filter=store.sheet.getFilter?.();if(filter)filter.removeColumnFilterCriteria(1);SpreadsheetApp.flush();
   console.log('CRM preparado. '+n+' filas pendientes repartidas. La clave está en Configuración del proyecto → Propiedades del script → CRM_KEY.');
  }finally{lock.releaseLock();}
+}
+function prepareOwners_(sheet){
+ const range=sheet.getRange(3,1,Math.max(1,(sheet.getMaxRows?.()||sheet.getLastRow())-2),1);
+ if(!range.getDataValidations)return;
+ let changed=false;const rules=range.getDataValidations().map(row=>row.map(rule=>{
+  if(!rule||rule.getCriteriaType()!==SpreadsheetApp.DataValidationCriteria.VALUE_IN_LIST)return rule;
+  const args=rule.getCriteriaValues(),values=args[0].slice();
+  for(const name of ['Daniel','David'])if(!values.includes(name)){values.push(name);changed=true;}
+  return values.length===args[0].length?rule:rule.copy().requireValueInList(values,args[1]!==false).build();
+ }));if(changed)range.setDataValidations(rules);
 }
 function owner_(v){return /^(dani|daniel)$/i.test(String(v).trim())?'Dani':String(v||'').trim();}
 function sourceOwner_(v){return v==='Dani'?'Daniel':v;}
