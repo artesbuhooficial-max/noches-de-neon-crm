@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+const base=new URL('.',import.meta.url);
+let html=fs.readFileSync(new URL('index.html',base),'utf8');
+html=html.replace('<link rel="stylesheet" href="style.css">','<style>'+fs.readFileSync(new URL('style.css',base),'utf8')+'</style>');
+for(const name of ['dani','david'])html=html.replaceAll(name+'.png','data:image/png;base64,'+fs.readFileSync(new URL(name+'.png',base)).toString('base64'));
+let js=fs.readFileSync(new URL('app.js',base),'utf8');
+for(const name of ['dani','david'])js=js.replaceAll(name+'.png','data:image/png;base64,'+fs.readFileSync(new URL(name+'.png',base)).toString('base64'));
+html=html.replace('<script src="app.js"></script>','<script>'+js+'</script>');
+fs.writeFileSync(new URL('Noches-de-Neon.html',base),html);
+fs.writeFileSync(new URL('AppsScriptIndex.html',base),html.replace('<script>','<script>window.NEON_ENDPOINT=__NEON_SERVER_ENDPOINT__;</script><script>'));
+console.log('HTML autónomo y archivo para Apps Script generados.');
