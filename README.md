@@ -26,6 +26,8 @@ El proyecto incluye también `Team.gs`. `repartirTodoCRM()` aplica el reparto de
 
 Las tarjetas y la lista se ordenan por fecha de solicitud de Bodas.net, **de más reciente a más antigua**. Los contactos sin fecha aparecen al final. Las llamadas con seguimiento futuro esperan hasta su fecha; entre los contactos que se pueden llamar, se mantiene el orden de entrada descendente. No se usa la fecha de boda como antigüedad del lead.
 
+La cola telefónica distingue mensajes de llamadas: tener un mensaje enviado en respond.io no excluye la primera llamada. Una llamada atendida espera a la próxima fecha programada; los intentos sin respuesta de hoy no reaparecen automáticamente el mismo día. Desde **Ficha / agendar** se puede programar cualquier seguimiento del responsable. El contador de cada tarjeta muestra llamadas disponibles ahora y contactos totales asignados. **Reservar** requiere seleccionar el propio nombre y no tener otra llamada activa; el servidor valida responsable, reserva y revisión antes de guardar.
+
 Tras actualizar `Code.gs`, `Team.gs` y la interfaz en Apps Script, ejecutar `repartirTodoCRM()` una vez y publicar una nueva versión de la implementación existente. El registro muestra los totales releídos de la hoja. `node team-check.mjs` comprueba mitades, distribución del histórico, duplicados y conservación de los datos.
 
 1. Usar la versión nativa de Google Sheets del CRM (el Excel en Drive debe convertirse primero con Archivo → Guardar como hoja de cálculo de Google). Abrir Extensiones → Apps Script.

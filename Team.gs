@@ -47,5 +47,9 @@ function doGet(){
  const oldOrder=".sort((a,b)=>{const rank=l=>l.proxima_llamada?0:l.contact_status==='Sin contactar'||l.estado==='Nuevo'?1:2;return rank(a)-rank(b)||(a.proxima_llamada||'9999').localeCompare(b.proxima_llamada||'9999')||(a.request_at||'9999').localeCompare(b.request_at||'9999')})";
  html=html.replace(oldOrder,'.sort(newestFirst)').replace('return [...groups.values()]}','return [...groups.values()].sort(newestFirst)}');
  if(!html.includes('function newestFirst('))html=html.replace('function queueLeads(){',"function newestFirst(a,b){return String(b.request_at||'').localeCompare(String(a.request_at||''))||String(a.id).localeCompare(String(b.id));}function queueLeads(){");
+ html=html.replace("if(l.contact_status==='Contactado')return false;","if(l.call_result==='Atendida')return false;");
+ html=html.replace('${owned.filter(autoCallDue).length} llamadas pendientes','${owned.filter(autoCallDue).length} para llamar ahora · ${leads.filter(l=>l.responsable===p).length} contactos asignados');
+ html=html.replace('Puedes programar una próxima llamada desde la ficha de cada contacto.','Tus contactos siguen en la lista. Abre Ficha / agendar para programar la próxima llamada.');
+ html=html.replace('>Ficha</button>','>Ficha / agendar</button>');
  return HtmlService.createHtmlOutput(html).setTitle('Noches de Neón · Ventas');
 }

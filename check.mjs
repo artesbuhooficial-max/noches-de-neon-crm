@@ -26,7 +26,11 @@ await node('leadForm').handlers.submit({preventDefault(){}});
 assert.equal(node('leadDialog').open,true);assert.match(node('saveFeedback').textContent,/rechazo de prueba/);assert.ok([...saved.keys()].some(k=>k.startsWith('neon-draft:')));
 console.log('OK: 300 contactos sin base64 repetido, guardado durante sincronización, errores persistentes y borrador conservado.');
 assert.equal(vm.runInContext("autoCallDue({...DEMO[0],contact_status:'Intentado',last_call:new Date().toISOString()})",front),false);
-assert.equal(vm.runInContext("autoCallDue({...DEMO[0],contact_status:'Contactado',last_call:'',proxima_llamada:''})",front),false);
+assert.equal(vm.runInContext("autoCallDue({...DEMO[0],contact_status:'Contactado',last_call:'',proxima_llamada:''})",front),true);
 assert.equal(vm.runInContext("autoCallDue({...DEMO[0],contact_status:'Contactado',proxima_llamada:'2020-01-01T12:00'})",front),true);
-console.log('OK: la cola avanza tras la llamada y separa los contactados del primer contacto.');
+assert.equal(vm.runInContext("autoCallDue({...DEMO[0],contact_status:'Contactado',call_result:'Atendida',last_call:'2020-01-01T12:00',proxima_llamada:''})",front),false);
+assert.equal(vm.runInContext("autoCallDue({...DEMO[0],contact_status:'Contactado',call_result:'No contesta',last_call:'2020-01-01T12:00',proxima_llamada:''})",front),true);
+assert.equal(vm.runInContext("autoCallDue({...DEMO[0],contact_status:'Contactado',proxima_llamada:'2099-01-01T12:00'})",front),false);
+console.log('OK: mensajes sin llamada siguen pendientes; se respetan llamadas atendidas, intentos de hoy y seguimientos futuros.');
+
 
