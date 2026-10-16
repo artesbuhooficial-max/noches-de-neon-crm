@@ -22,6 +22,12 @@ La sección Repertorios usa como presentación principal los cuatro estilos del 
 
 ## Conectar el CRM compartido
 
+El proyecto incluye también `Team.gs`. `repartirTodoCRM()` aplica el reparto de **todo** el CRM entre Dani (Daniel en la hoja) y David, por teléfono único: mitades iguales o un contacto de diferencia si el total es impar. Equilibra también los contactos con mensajes salientes de respond.io. Conserva el histórico, notas y autor real de cada mensaje; una reasignación no significa que el nuevo responsable lo haya escrito. Las reservas activas se conservan. Las filas duplicadas de un mismo teléfono siempre van al mismo comercial. Las nuevas entradas se asignan para mantener el equilibrio total.
+
+Las tarjetas y la lista se ordenan por fecha de solicitud de Bodas.net, **de más reciente a más antigua**. Los contactos sin fecha aparecen al final. Las llamadas con seguimiento futuro esperan hasta su fecha; entre los contactos que se pueden llamar, se mantiene el orden de entrada descendente. No se usa la fecha de boda como antigüedad del lead.
+
+Tras actualizar `Code.gs`, `Team.gs` y la interfaz en Apps Script, ejecutar `repartirTodoCRM()` una vez y publicar una nueva versión de la implementación existente. El registro muestra los totales releídos de la hoja. `node team-check.mjs` comprueba mitades, distribución del histórico, duplicados y conservación de los datos.
+
 1. Usar la versión nativa de Google Sheets del CRM (el Excel en Drive debe convertirse primero con Archivo → Guardar como hoja de cálculo de Google). Abrir Extensiones → Apps Script.
 2. Copiar `Code.gs` al proyecto. Añadir un archivo HTML llamado `Index` y copiar dentro el contenido completo de `AppsScriptIndex.html` incluido.
 3. Ejecutar `setup` y autorizar acceso a esa hoja. Genera `SHEET_ID` y una clave aleatoria `CRM_KEY` en Propiedades del script. Compartir esta clave solo con Daniel y David. El token de respond.io nunca se pega en la interfaz.

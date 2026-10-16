@@ -1,0 +1,13 @@
+import {harness} from './source-check.mjs';
+import assert from 'node:assert/strict';
+const {ctx}=harness([['CRM'],['Comercial']]);
+const leads=Array.from({length:27},(_,i)=>({id:'id'+i,telefono:'600'+String(i).padStart(6,'0'),responsable:i%2?'David':'Sergio',request_at:'2026-10-'+String(i+1).padStart(2,'0'),respond_last_sent:i<12?'2026-09-01':'',last_writer:i<12?'David':'',contact_status:'Contactado',notas:'Nota '+i,revision:0}));
+leads.push({...leads[0],id:'dup',telefono:'+34 '+leads[0].telefono});
+const before=leads.map(l=>({notas:l.notas,last_writer:l.last_writer,respond_last_sent:l.respond_last_sent,contact_status:l.contact_status}));
+const result=ctx.repartitionTeam_(leads);
+assert.equal(result.totalContacts,27);assert.equal(Math.abs(result.contacts.Dani-result.contacts.David),1);assert.equal(result.withMessages.Dani,6);assert.equal(result.withMessages.David,6);
+assert.equal(leads[0].responsable,leads.at(-1).responsable);
+leads.forEach((l,i)=>assert.deepEqual({notas:l.notas,last_writer:l.last_writer,respond_last_sent:l.respond_last_sent,contact_status:l.contact_status},before[i]));
+const order=Array.from(ctx.teamGroups_(leads),g=>g[0].request_at);assert.deepEqual(order,[...order].sort().reverse());
+const active=[{...leads[1],lock_owner:'David',lock_until:Date.now()+60000},{...leads[2],lock_owner:'',lock_until:0}];ctx.repartitionTeam_(active);assert.equal(active[0].responsable,'David');assert.equal(active[0].lock_owner,'David');assert.equal(active[1].responsable,'Dani');
+console.log('OK: reparto completo por mitades, mensajes equilibrados, duplicados juntos, histórico íntegro y orden descendente.');

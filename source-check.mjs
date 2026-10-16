@@ -11,7 +11,7 @@ export class Sheet{
 export function harness(rows){
  const tables=new Map([['VENTA (SETTER Y CLOSSER)',new Sheet(rows)]]),props={},ss={getId:()=> 'test-sheet',getUrl:()=> 'https://docs.google.com/spreadsheets/d/test-sheet/edit',getSheetByName:n=>tables.get(n),insertSheet:n=>{const s=new Sheet();tables.set(n,s);return s;}};let locked=false,uuid=0;
  const ctx=vm.createContext({Date,console:{log(){}},PropertiesService:{getScriptProperties:()=>({getProperty:k=>props[k],setProperty:(k,v)=>{props[k]=v;}})},SpreadsheetApp:{getActiveSpreadsheet:()=>ss,openById:()=>ss,flush(){}},LockService:{getScriptLock:()=>({waitLock:()=>{assert.equal(locked,false);locked=true;},hasLock:()=>locked,releaseLock:()=>{locked=false;}})},Utilities:{getUuid:()=> 'uuid-'+ ++uuid,DigestAlgorithm:{SHA_256:'sha256'},computeDigest:(alg,s)=>crypto.createHash(alg).update(s).digest(),base64EncodeWebSafe:b=>Buffer.from(b).toString('base64url'),parseDate:s=>new Date(s+'Z'),formatDate:(d,tz,pattern)=>d.toISOString().slice(0,pattern.includes('ss')?19:pattern.includes('HH')?16:10)}});
- vm.runInContext(fs.readFileSync(new URL('Code.gs',import.meta.url),'utf8'),ctx);ctx.setup();
+ vm.runInContext(fs.readFileSync(new URL('Code.gs',import.meta.url),'utf8'),ctx);vm.runInContext(fs.readFileSync(new URL('Team.gs',import.meta.url),'utf8'),ctx);ctx.setup();
  const call=(action,actor='Dani',extra={})=>ctx.runRequest({action,actor,key:props.CRM_KEY,...extra});
  return {ctx,call,tables,props,ss};
 }
@@ -28,11 +28,11 @@ let leads=call('list').data.leads;
 assert.equal(leads.length,7);assert.equal(leads.find(l=>l.nombre==='Sergio').responsable,'Sergio');
 assert.equal(leads.find(l=>l.nombre==='Sin teléfono').responsable,'');assert.equal(leads.find(l=>l.nombre==='Sin teléfono').contact_status,'Revisar teléfono');
 const a=leads.find(l=>l.nombre==='A'),dup=leads.find(l=>l.nombre==='A repetido');assert.equal(a.responsable,dup.responsable);assert.equal(a.contact_status,'Sin contactar');
-assert.equal(source.rows[4][0],'Daniel');assert.equal(source.rows[2][2],'Negociación');assert.equal(source.rows[4][20],'=1+2');
+assert.equal(source.rows[4][0],a.responsable==='Dani'?'Daniel':'David');assert.equal(source.rows[2][2],'Negociación');assert.equal(source.rows[4][20],'=1+2');
 assert.equal(ctx.runRequest({key:'wrong',actor:'Dani',action:'list'}).ok,false);
 const req=l=>({id:l.id,revision:l.revision,source_version:l.source_version});
 let result=call('claim',a.responsable,req(a));assert.equal(result.ok,true,result.error);assert.equal(result.data.leads.filter(l=>l.lock_owner===a.responsable).length,2);
-assert.equal(call('claim','David',req(a)).ok,false);
+assert.equal(call('claim',a.responsable==='Dani'?'David':'Dani',req(a)).ok,false);
 let current=result.data.leads.find(l=>l.id===a.id);
 assert.equal(call('finish',a.responsable,req(current)).ok,false,'Un resultado es obligatorio antes de liberar');
 result=call('finish',a.responsable,{...req(current),result:'No contesta',lead:{...current,proxima_llamada:'2026-10-16T10:00',notas:'Volver mañana'}});assert.equal(result.ok,true,result.error);
@@ -47,3 +47,5 @@ source.rows.splice(2,0,source.rows.pop());assert.deepEqual(Array.from(call('list
 assert.equal(source.rows.find(r=>r[4]==='Sergio')[0],'Sergio');
 const dates=ctx.enrichRequests_(ctx.loadStore_(h.ss),[{request_at:'2026-10-09T07:42:18',telefono:'+34 600000010',fecha_boda:'2027-06-12',bodas_estado:'Atendida'},{request_at:'2026-10-01T10:00:00',telefono:'611111111',fecha_boda:'2027-06-12'}]);assert.equal(dates.matched,1);assert.equal(dates.rows,2);assert.equal(dates.unmatched,1);
 console.log('OK: reparto por teléfono, conservación del CRM, resultados, reservas, ediciones simultáneas, importación e IDs estables.');
+
+

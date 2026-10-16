@@ -18,7 +18,8 @@ function date(s){if(!s)return 'Sin programar';const d=new Date(s);return isNaN(d
 function tag(s,c=''){return `<span class="tag ${c}">${esc(s)}</span>`}
 function phoneLink(l){return `tel:${String(l.telefono).replace(/[^+\d]/g,'')}`}
 function phoneKey(v){let n=String(v||'').replace(/\D/g,'');if(n.startsWith('0034'))n=n.slice(2);return n.length===9?'34'+n:n}
-function queueLeads(){const groups=new Map(),rank=l=>activeLock(l)?0:eligible(l)?1:2;for(const l of data.leads){const key=phoneKey(l.telefono)||l.id,old=groups.get(key),n=(old?.duplicate_count||0)+1;if(!old||rank(l)<rank(old))groups.set(key,{...l,duplicate_count:n});else old.duplicate_count=n;}return [...groups.values()]}
+function newestFirst(a,b){return String(b.request_at||'').localeCompare(String(a.request_at||''))||String(a.id).localeCompare(String(b.id));}
+function queueLeads(){const groups=new Map(),rank=l=>activeLock(l)?0:eligible(l)?1:2;for(const l of data.leads){const key=phoneKey(l.telefono)||l.id,old=groups.get(key),n=(old?.duplicate_count||0)+1;if(!old||rank(l)<rank(old))groups.set(key,{...l,duplicate_count:n});else old.duplicate_count=n;}return [...groups.values()].sort(newestFirst)}
 function ageInfo(l){if(!/^\d{4}-\d{2}-\d{2}/.test(l.request_at||''))return null;const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Madrid',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),days=Math.max(0,Math.floor((Date.parse(today)-Date.parse(l.request_at.slice(0,10)))/86400000));return {days,color:days<=2?'blue':days<=7?'orange':'red',label:'Entrada '+l.request_at.slice(8,10)+'/'+l.request_at.slice(5,7)+'/'+l.request_at.slice(0,4)+' · '+days+' días'};}
 function ageTag(l){const a=ageInfo(l);return a?tag(a.label,a.color):tag('Entrada sin fecha');}
 function eligible(l){return phoneKey(l.telefono)&&!l.owner_conflict&&l.contact_status!=='Revisar teléfono'&&!['Reserva confirmada','No interesado'].includes(l.estado)}
@@ -32,7 +33,7 @@ function render(){
  $('stats').innerHTML=[['POR LLAMAR',pending.filter(autoCallDue).length,'Primer contacto o seguimiento previsto','↗'],['PROPUESTAS ENVIADAS',leads.filter(l=>l.estado==='Propuesta enviada').length,'El siguiente paso: hablar','↗'],['EN NEGOCIACIÓN',leads.filter(l=>l.estado==='En negociación').length,'Conversaciones con potencial','◈'],['RESERVAS CONFIRMADAS',leads.filter(l=>l.estado==='Reserva confirmada').length,'Que empiece la fiesta','✧']].map(([t,n,b,i])=>`<div class="stat"><div class="stat-label">${t}<span>${i}</span></div><b>${n.toString().padStart(2,'0')}</b><small>${b}</small></div>`).join('');
  $('navCount').textContent=pending.length;
  $('agents').innerHTML=Object.keys(PEOPLE).map(p=>{
- const owned=pending.filter(l=>l.responsable===p), locked=leads.find(l=>activeLock(l)&&l.lock_owner===p), next=locked||owned.filter(autoCallDue).sort((a,b)=>{const rank=l=>l.proxima_llamada?0:l.contact_status==='Sin contactar'||l.estado==='Nuevo'?1:2;return rank(a)-rank(b)||(a.proxima_llamada||'9999').localeCompare(b.proxima_llamada||'9999')||(a.request_at||'9999').localeCompare(b.request_at||'9999')})[0];
+ const owned=pending.filter(l=>l.responsable===p), locked=leads.find(l=>activeLock(l)&&l.lock_owner===p), next=locked||owned.filter(autoCallDue).sort(newestFirst)[0];
  return `<article class="agent ${p.toLowerCase()}"><div class="agent-top"><img class="portrait" src="${PEOPLE[p]}" alt="${p}"><div><h3>${p}</h3><small>${owned.filter(autoCallDue).length} llamadas pendientes</small></div><span class="pill">${locked?'EN LLAMADA':'DISPONIBLE'}</span></div><div class="agent-body">${next?`<div class="overline">${locked?'CONTACTO RESERVADO':'SIGUIENTE LLAMADA'}</div><div class="contact-name">${esc(next.nombre)}</div><a class="phone" href="${phoneLink(next)}" data-action="dial" data-id="${esc(next.id)}">${esc(next.telefono)}</a><div class="tags">${tag(next.contact_status||'Sin contactar')}${tag(next.estado,stateColor(next.estado))}${ageTag(next)}${tag(next.lugar||'Lugar por confirmar')}</div><p class="muted">${esc(next.notas||'Todavía sin notas. Una buena conversación empieza aquí.')}</p><div class="agent-foot"><span class="muted">◷ ${esc(date(next.proxima_llamada))}</span><button class="${p===user?'primary':'secondary'}" data-action="${locked?'finish':'claim'}" data-id="${esc(next.id)}" ${p!==user?'disabled':''}>${locked?'Terminar llamada':'Reservar y llamar'} ↗</button></div>`:'<div class="overline">COLA DESPEJADA</div><div class="contact-name">A por el siguiente.</div><p class="muted">Puedes programar una próxima llamada desde la ficha de cada contacto.</p>'}</div></article>`;
  }).join('');
  const query=$('search').value.toLowerCase(), owner=$('ownerFilter').value, state=$('statusFilter').value, contact=$('contactFilter').value;
@@ -96,5 +97,6 @@ window.addEventListener('storage',e=>{if(e.key==='neon-data'&&!config.endpoint){
 function refreshWhenVisible(){if(document.hidden||$('leadDialog').open||savingLead)return;if(config.endpoint&&config.secret)sync(true);else render()}
 document.addEventListener('visibilitychange',refreshWhenVisible);
 render();if(config.endpoint&&config.secret)sync(true);setInterval(refreshWhenVisible,15000);
+
 
 

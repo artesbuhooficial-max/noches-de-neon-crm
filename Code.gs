@@ -5,7 +5,7 @@ const RESULTS=['Atendida','No contesta','Ocupado','Volver a llamar','Teléfono i
 const META={id:'CRM ID',contact_status:'Estado de contacto',estado:'Estado CRM',proxima_llamada:'Próxima llamada',call_result:'Resultado última llamada',last_call:'Fecha última llamada',last_writer:'Último escritor',respond_id:'ID respond.io',revision:'Revisión CRM',lock_owner:'Reserva por',lock_until:'Reserva hasta',respond_sync:'Sincronización respond.io',contacted_by:'Contactado por',source_stage:'Etapa original sincronizada'};
 META.request_at='Fecha solicitud Bodas.net';META.bodas_estado='Estado en Bodas.net';
 Object.assign(META,{respond_last_sent:'Último envío respond.io',respond_last_received:'Última entrada respond.io',respond_origin:'Origen mensaje respond.io',respond_evidence:'ID evidencia respond.io',respond_reviewed:'Fecha cotejo respond.io',respond_context:'Seguimiento respond.io'});
-function doGet(){const p=PropertiesService.getScriptProperties();return HtmlService.createHtmlOutput(HtmlService.createHtmlOutputFromFile('Index').getContent().replace('__NEON_SERVER_ENDPOINT__',JSON.stringify(ScriptApp.getService().getUrl())).replace('__NEON_SHEET_URL__',JSON.stringify('https://docs.google.com/spreadsheets/d/'+p.getProperty('SHEET_ID')+'/edit'))).setTitle('Noches de Neón · Ventas');}
+function baseDoGet_(){const p=PropertiesService.getScriptProperties();return HtmlService.createHtmlOutput(HtmlService.createHtmlOutputFromFile('Index').getContent().replace('__NEON_SERVER_ENDPOINT__',JSON.stringify(ScriptApp.getService().getUrl())).replace('__NEON_SHEET_URL__',JSON.stringify('https://docs.google.com/spreadsheets/d/'+p.getProperty('SHEET_ID')+'/edit'))).setTitle('Noches de Neón · Ventas');}
 function doPost(e){try{return json_(runRequest(JSON.parse(e.postData.contents)));}catch(err){return json_({ok:false,error:err.message});}}
 function json_(v){return ContentService.createTextOutput(JSON.stringify(v)).setMimeType(ContentService.MimeType.JSON);}
 function setup(){
@@ -56,7 +56,7 @@ function loadStore_(ss){
  });return {sheet,cols,leads};
 }
 // Equilibra las nuevas colas por teléfono, conservando las asignaciones previas.
-function distribute_(leads){
+function distributeLegacy_(leads){
  const groups=new Map();leads.forEach(l=>{const p=phone_(l.telefono);if(p){if(!groups.has(p))groups.set(p,[]);groups.get(p).push(l);}});
  const counts={Dani:0,David:0};
  for(const group of groups.values())for(const p of ['Dani','David'])if(group.some(l=>l.responsable===p&&['Sin contactar','Intentado'].includes(l.contact_status)))counts[p]++;
@@ -209,3 +209,4 @@ function runRequest(req){
   return {ok:true,data:{leads:store.leads.map(({_row,_dirty,_ownerDirty,_detailsDirty,...lead})=>lead),events,sheetUrl:ss.getUrl()},warning,message};
  }catch(e){return {ok:false,error:e.message};}finally{if(lock&&lock.hasLock())lock.releaseLock();}
 }
+
