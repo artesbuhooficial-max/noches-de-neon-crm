@@ -4,6 +4,7 @@ const STATES=['Nuevo','Contactado','Propuesta enviada','En negociación','Reserv
 const RESULTS=['Atendida','No contesta','Ocupado','Volver a llamar','Teléfono incorrecto'];
 const META={id:'CRM ID',contact_status:'Estado de contacto',estado:'Estado CRM',proxima_llamada:'Próxima llamada',call_result:'Resultado última llamada',last_call:'Fecha última llamada',last_writer:'Último escritor',respond_id:'ID respond.io',revision:'Revisión CRM',lock_owner:'Reserva por',lock_until:'Reserva hasta',respond_sync:'Sincronización respond.io',contacted_by:'Contactado por',source_stage:'Etapa original sincronizada'};
 META.request_at='Fecha solicitud Bodas.net';META.bodas_estado='Estado en Bodas.net';
+Object.assign(META,{respond_last_sent:'Último envío respond.io',respond_last_received:'Última entrada respond.io',respond_origin:'Origen mensaje respond.io',respond_evidence:'ID evidencia respond.io',respond_reviewed:'Fecha cotejo respond.io',respond_context:'Seguimiento respond.io'});
 function doGet(){const p=PropertiesService.getScriptProperties();return HtmlService.createHtmlOutput(HtmlService.createHtmlOutputFromFile('Index').getContent().replace('__NEON_SERVER_ENDPOINT__',JSON.stringify(ScriptApp.getService().getUrl())).replace('__NEON_SHEET_URL__',JSON.stringify('https://docs.google.com/spreadsheets/d/'+p.getProperty('SHEET_ID')+'/edit'))).setTitle('Noches de Neón · Ventas');}
 function doPost(e){try{return json_(runRequest(JSON.parse(e.postData.contents)));}catch(err){return json_({ok:false,error:err.message});}}
 function json_(v){return ContentService.createTextOutput(JSON.stringify(v)).setMimeType(ContentService.MimeType.JSON);}
@@ -127,6 +128,33 @@ function dateColors_(store){
  for(const [condition,bg,fg]of [[`TODAY()-INT(${cell})<=2`,'#DBEAFE','#1E40AF'],[`AND(TODAY()-INT(${cell})>=3,TODAY()-INT(${cell})<=7)`,'#FEF3C7','#92400E'],[`TODAY()-INT(${cell})>7`,'#FEE2E2','#991B1B']])rules.push(SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied(`=AND(ISNUMBER(${cell}),${condition})`).setBackground(bg).setFontColor(fg).setRanges([range]).build());
  store.sheet.setConditionalFormatRules(rules);store.sheet.setColumnWidth(store.cols.request_at,180);p.setProperty('DATE_COLORS_READY','1');
 }
+function reconcileRespond_(store,records){
+ if(!Array.isArray(records)||records.length>2000)throw Error('Máximo 2000 contactos de respond.io.');
+ const summary={matched:0,rows:0,contacted:0,attempted:0,incoming_only:0,unmatched:0,conflict:0,changed:0};
+ for(const r of records){
+  if(String(r.channel_id)!=='537086'||!/^\d+$/.test(String(r.respond_id)))throw Error('Fuente respond.io no válida para Noches de Neón.');
+  for(const k of ['sent_at','received_at'])if(r[k]&&!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(r[k]))throw Error('Fecha de evidencia inválida.');
+  if(r.sent_at&&!r.message_id)throw Error('Falta ID de mensaje enviado.');
+  let matches=store.leads.filter(l=>r.telefono&&phone_(l.telefono)===phone_(r.telefono));
+  if(!matches.length&&r.email)matches=store.leads.filter(l=>l.email.trim().toLowerCase()===String(r.email).trim().toLowerCase());
+  if(!matches.length){summary.unmatched++;continue;}
+  if(r.fecha_boda){const same=matches.filter(l=>l.fecha_boda===r.fecha_boda||!l.fecha_boda);if(!same.length){summary.conflict++;continue;}matches=same;}
+  else if(new Set(matches.map(l=>l.fecha_boda).filter(Boolean)).size>1){summary.conflict++;continue;}
+  if(matches.some(l=>l.respond_id&&l.respond_id!==String(r.respond_id))){summary.conflict++;continue;}
+  summary.matched++;summary.rows+=matches.length;
+  for(const l of matches){
+   const changes={respond_id:String(r.respond_id),respond_reviewed:'2026-10-16'};
+   if(r.sent_at&&(!l.respond_last_sent||r.sent_at>=l.respond_last_sent)){changes.respond_last_sent=r.sent_at;changes.respond_origin=String(r.origin||'respond.io');changes.respond_evidence=String(r.message_id);}
+   if(r.received_at&&(!l.respond_last_received||r.received_at>l.respond_last_received))changes.respond_last_received=r.received_at;
+   const sent=changes.respond_last_sent||l.respond_last_sent,received=changes.respond_last_received||l.respond_last_received;
+   changes.respond_context=sent?(received?(received>sent?'Cliente respondió · revisar siguiente acción':'Mensaje enviado · hay conversación previa'):'Mensaje enviado · sin respuesta registrada'):r.failed_count?'Envíos fallidos · revisar contacto':'Solo consulta entrante · pendiente de contactar';
+   if(sent){summary.contacted++;if(['Sin contactar','Intentado',''].includes(l.contact_status)){changes.contact_status='Contactado';if(l.estado==='Nuevo')changes.estado='Contactado';}}
+   else if(r.failed_count){summary.attempted++;if(!l.contact_status||l.contact_status==='Sin contactar')changes.contact_status='Intentado';}
+   else summary.incoming_only++;
+   if(Object.entries(changes).some(([k,v])=>String(l[k]||'')!==v)){Object.assign(l,changes);bump_(l);summary.changed++;}
+  }
+ }return summary;
+}
 function runRequest(req){
  let lock;
  try{
@@ -135,7 +163,8 @@ function runRequest(req){
   if(!['Dani','David'].includes(req.actor))throw Error('Selecciona Dani o David.');
   lock=LockService.getScriptLock();lock.waitLock(20000);
   const ss=SpreadsheetApp.openById(props.getProperty('SHEET_ID')),activity=ss.getSheetByName('Actividad CRM');if(!activity)throw Error('Ejecuta setup() antes de conectar.');
-  let store=loadStore_(ss);distribute_(store.leads);flushDirty_(store);store=loadStore_(ss);distribute_(store.leads);
+  let store=loadStore_(ss);distribute_(store.leads);
+  if(store.leads.some(x=>x._dirty)){flushDirty_(store);SpreadsheetApp.flush();store=loadStore_(ss);distribute_(store.leads);}
   const leads=store.leads,l=leads.find(x=>x.id===req.id),group=l?leads.filter(x=>phone_(x.telefono)===phone_(l.telefono)):[];
   const log=text=>activity.appendRow([req.actor,safeCell_(text),new Date().toISOString()]);let warning='',message='';
   if(['claim','finish','wrote'].includes(req.action)){
@@ -162,6 +191,8 @@ function runRequest(req){
     }else warning='Actividad guardada. Falta el token de respond.io o el ID del contacto.';
     group.forEach(x=>{x.last_writer=req.actor;x.respond_sync=sync;x.contact_status='Contactado';x.contacted_by=req.actor;if(x.estado==='Nuevo')x.estado='Contactado';bump_(x);});log('marcó que escribió a '+l.nombre);
    }
+  }else if(req.action==='reconcile_respond'){
+   const summary=reconcileRespond_(store,req.records);message=JSON.stringify(summary);log('cotejó histórico Noches de Neón en respond.io · '+message);
   }else if(req.action==='enrich'){
    const summary=enrichRequests_(store,req.requests);message=summary.matched+' solicitudes enlazadas a '+summary.rows+' filas. '+summary.unmatched+' sin coincidencia; '+summary.conflict+' con fecha de boda distinta.';log('importó fechas de Bodas.net · '+message);dateColors_(store);
   }else if(req.action==='save'){
@@ -173,7 +204,7 @@ function runRequest(req){
    if(!Array.isArray(req.leads)||req.leads.length>2000)throw Error('Máximo 2000 contactos por importación.');
    const incoming=req.leads.map(validateLead_);let n=0;incoming.forEach(clean=>{if(leads.some(x=>phone_(x.telefono)===phone_(clean.telefono)))return;addLead_(store,clean);n++;});message=n+' contactos añadidos. Teléfonos existentes omitidos.';log('importó '+n+' contactos');
   }else if(req.action!=='list')throw Error('Acción no permitida.');
-  distribute_(store.leads);flushDirty_(store);SpreadsheetApp.flush();store=loadStore_(ss);distribute_(store.leads);
+  distribute_(store.leads);if(store.leads.some(x=>x._dirty)){flushDirty_(store);SpreadsheetApp.flush();store=loadStore_(ss);distribute_(store.leads);}
   const events=activity.getLastRow()>1?activity.getRange(Math.max(2,activity.getLastRow()-499),1,Math.min(500,activity.getLastRow()-1),3).getDisplayValues().map(([actor,text,time])=>({actor,text,time})):[];
   return {ok:true,data:{leads:store.leads.map(({_row,_dirty,_ownerDirty,_detailsDirty,...lead})=>lead),events,sheetUrl:ss.getUrl()},warning,message};
  }catch(e){return {ok:false,error:e.message};}finally{if(lock&&lock.hasLock())lock.releaseLock();}

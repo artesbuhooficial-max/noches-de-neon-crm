@@ -1,0 +1,12 @@
+import {harness} from './source-check.mjs';
+import assert from 'node:assert/strict';
+const row=(n,p,date='2027-06-12')=>{const r=Array(37).fill('');r[3]=date;r[4]=n;r[6]=p;r[15]='Notas conservadas';return r};
+const h=harness([['CRM'],['Comercial','','ESTADO','','NOMBRE CONTACTO','','TLF'],row('Enviado','600000001'),row('Entrante','600000002'),row('Fallido','600000003'),row('Otra boda','600000004'),row('Otra boda 2','600000004','2028-01-01')]);
+const base={channel_id:'537086',origin:'Automatización',sent_at:'2026-10-08T11:25:06',message_id:'1234'};
+let result=h.call('reconcile_respond','David',{records:[{...base,respond_id:'1001',telefono:'600000001'},{...base,respond_id:'1002',telefono:'600000002',sent_at:'',received_at:'2026-10-08T11:26:06'},{...base,respond_id:'1003',telefono:'600000003',sent_at:'',failed_count:1},{...base,respond_id:'1004',telefono:'600000004'}]});
+assert.equal(result.ok,true,result.error);const stats=JSON.parse(result.message);assert.equal(stats.conflict,1);assert.equal(stats.contacted,1);assert.equal(stats.incoming_only,1);assert.equal(stats.attempted,1);
+const leads=result.data.leads;assert.equal(leads[0].contact_status,'Contactado');assert.equal(leads[1].contact_status,'Sin contactar');assert.equal(leads[2].contact_status,'Intentado');assert.equal(leads[0].notas,'Notas conservadas');assert.equal(leads[0].responsable,'Dani');assert.equal(leads[0].last_call,'');assert.equal(leads[0].call_result,'');
+result=h.call('reconcile_respond','David',{records:[{...base,respond_id:'1001',telefono:'600000001'}]});assert.equal(JSON.parse(result.message).changed,0);
+result=h.call('reconcile_respond','David',{records:[{...base,respond_id:'9999',telefono:'600000001'}]});assert.equal(JSON.parse(result.message).conflict,1);
+assert.equal(h.call('reconcile_respond','David',{records:[{...base,respond_id:'1001',channel_id:'546148'}]}).ok,false);
+console.log('OK: cotejo exacto, entrantes, fallidos, conflictos, conservación e idempotencia.');

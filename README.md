@@ -60,3 +60,15 @@ No detecta automáticamente lo que se escribe directamente en respond.io. Esa at
 
 El repositorio no contiene contactos reales, enlaces privados del CRM, claves ni tokens. Los archivos privados de preparación quedan en `.local/`, excluido de Git.
 
+
+## Guardado e histórico de conversaciones
+
+El botón de guardado espera confirmación del servidor, conserva un borrador local y muestra los errores dentro de la ficha. Las sincronizaciones se pausan mientras se edita o la pestaña está oculta.
+
+La cola automática excluye los contactos ya contactados sin una próxima llamada programada. Los intentos de hoy no vuelven a sugerirse inmediatamente. Se pueden reservar manualmente desde la lista.
+
+El cotejo de respond.io guarda la última salida, entrada, origen (equipo, automatización o difusión), ID de evidencia y fecha de revisión. Solo admite el canal configurado de Noches de Neón y coincidencias exactas de teléfono o correo; separa fechas de boda contradictorias. Los entrantes sin salida quedan pendientes de contactar. Conserva responsables, notas, resultados de llamadas y estados comerciales avanzados.
+
+Es una revisión del histórico exportado, no una sincronización continua de mensajes. El enlace de cada ficha abre su conversación en respond.io. Los archivos de exportación y el ayudante de importación quedan fuera del repositorio.
+
+`node respond-check.mjs` verifica el cotejo, los casos de entrantes, fallos, conflictos, conservación e idempotencia.
