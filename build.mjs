@@ -2,7 +2,7 @@ import fs from 'node:fs';
 const base=new URL('.',import.meta.url);
 let html=fs.readFileSync(new URL('index.html',base),'utf8');
 html=html.replace('<link rel="stylesheet" href="style.css">',()=>'<style>'+fs.readFileSync(new URL('style.css',base),'utf8')+'</style>');
-for(const file of ['app.js','catalog.js','library.js']){
+for(const file of ['hosting.js','app.js','catalog.js','library.js']){
  const js=fs.readFileSync(new URL(file,base),'utf8');
  html=html.replace('<script src="'+file+'"></script>',()=>'<script>'+js.replaceAll('</script>','<\\/script>')+'</script>');
 }

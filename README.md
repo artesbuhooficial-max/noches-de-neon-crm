@@ -2,6 +2,8 @@
 
 Aplicación publicada: [abrir CRM compartido](https://script.google.com/macros/s/AKfycbwync77WImUjtzw022SUyzYp-7-axJwrUH5m3XpDo2yxykm1lIn0l_FQ0LIMKORZHOVQQ/exec).
 
+El [enlace de GitHub Pages](https://artesbuhooficial-max.github.io/noches-de-neon-crm/) abre automáticamente esta aplicación compartida mediante `hosting.js`. La copia local conserva la demo. Google gestiona el inicio de sesión y el servidor mantiene la clave fuera del repositorio. La redirección no incluye claves ni datos de contactos.
+
 Requiere cuenta de Google y clave privada del equipo en **Conexiones**. La clave no está incluida en este repositorio. Seleccionar Dani o David antes de trabajar, reservar el contacto, llamar desde el teléfono mostrado y guardar el resultado, notas y próxima llamada. La guía se puede mantener abierta durante la llamada. El enlace del Sheet y el endpoint se rellenan automáticamente en la aplicación publicada.
 
 Abrir `Noches-de-Neon.html` para probar la interfaz completa. Las fotos son Dani (primera) y David (segunda). Los seis contactos iniciales son ficticios. El modo demo guarda cambios en este navegador; no coordina ordenadores distintos.
