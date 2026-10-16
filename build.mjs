@@ -1,8 +1,9 @@
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 const base=new URL('.',import.meta.url);
 let html=fs.readFileSync(new URL('index.html',base),'utf8');
 html=html.replace('<link rel="stylesheet" href="style.css">',()=>'<style>'+fs.readFileSync(new URL('style.css',base),'utf8')+'</style>');
-for(const file of ['hosting.js','app.js','catalog.js','library.js']){
+for(const file of ['hosting.js','app.js','catalog.js','library.js','simple-calls.js']){
  const js=fs.readFileSync(new URL(file,base),'utf8');
  html=html.replace('<script src="'+file+'"></script>',()=>'<script>'+js.replaceAll('</script>','<\\/script>')+'</script>');
 }
@@ -13,4 +14,9 @@ for(const name of ['dani','david']){
 }
 fs.writeFileSync(new URL('Noches-de-Neon.html',base),standalone);
 fs.writeFileSync(new URL('AppsScriptIndex.html',base),hosted.replace('<script>','<script>window.NEON_ENDPOINT=__NEON_SERVER_ENDPOINT__;window.NEON_SHEET_URL=__NEON_SHEET_URL__;</script><script>'));
+const simpleSource=fs.readFileSync(new URL('simple-calls.js',base));
+const simpleHash=crypto.createHash('sha384').update(simpleSource).digest('base64');
+const simpleVersion=crypto.createHash('sha256').update(simpleSource).digest('hex').slice(0,12);
+fs.writeFileSync(new URL('SimpleCalls.html',base),'<script src="https://artesbuhooficial-max.github.io/noches-de-neon-crm/simple-calls.js?v='+simpleVersion+'" integrity="sha384-'+simpleHash+'" crossorigin="anonymous"></script>');
 console.log('HTML autónomo y archivo para Apps Script generados.');
+

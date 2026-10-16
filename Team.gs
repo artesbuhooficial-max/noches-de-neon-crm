@@ -51,5 +51,6 @@ function doGet(){
  html=html.replace('${owned.filter(autoCallDue).length} llamadas pendientes','${owned.filter(autoCallDue).length} para llamar ahora · ${leads.filter(l=>l.responsable===p).length} contactos asignados');
  html=html.replace('Puedes programar una próxima llamada desde la ficha de cada contacto.','Tus contactos siguen en la lista. Abre Ficha / agendar para programar la próxima llamada.');
  html=html.replace('>Ficha</button>','>Ficha / agendar</button>');
+ if(!html.includes('function phoneCallStage('))html=html.replace('</body>',HtmlService.createHtmlOutputFromFile('SimpleCalls').getContent()+'</body>');
  return HtmlService.createHtmlOutput(html).setTitle('Noches de Neón · Ventas');
 }

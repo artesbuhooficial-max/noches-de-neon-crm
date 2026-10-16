@@ -10,6 +10,14 @@ Abrir `Noches-de-Neon.html` para probar la interfaz completa. Las fotos son Dani
 
 La pestaña **Conexiones** guarda el enlace del Google Sheet elegido. Guardar el enlace no activa la sincronización. Hay importación CSV y exportación CSV; los teléfonos duplicados se omiten. El selector de arriba cambia entre Dani y David y funciona como identidad de equipo, no como inicio de sesión individual.
 
+## Vista sencilla de llamadas
+
+`simple-calls.js` añade una vista de trabajo personal con **Por llamar**, **Ya hablamos**, **Sin respuesta** y **Todos los contactos**. Conserva todos los contactos originales y utiliza los resultados y fechas que ya estaban guardados. Un contacto llamado no reaparece automáticamente al día siguiente: solo vuelve con una próxima llamada explícita, ya vencida y posterior a la última registrada. Un mensaje de respond.io no cuenta como conversación telefónica. Se conserva el orden de entrada de más reciente a más antiguo.
+
+**Elegir para llamar** usa la reserva central existente. Después, **Hemos hablado** o **No contesta** abre una ficha breve con resultado, notas y próxima llamada; **Guardar y pasar al siguiente** guarda mediante la misma operación del servidor. Los datos completos e historial de respond.io siguen accesibles en **Ficha / agendar**. Las notas anteriores se precargan y no se modifican hasta guardar. No hay migración, borrado, reasignación ni restauración de datos al desplegar esta mejora.
+
+Para actualizar una implementación anterior, añadir un HTML de Apps Script llamado `SimpleCalls` con el contenido del archivo `SimpleCalls.html` y actualizar el `doGet` de `Team.gs`. Este HTML carga el módulo público de GitHub Pages con su huella SRI; hay que ejecutar `node build.mjs` y actualizar el archivo tras modificar el módulo. El HTML autónomo y `AppsScriptIndex.html` incorporan el módulo directamente y no necesitan esa carga externa. `node simple-calls-check.mjs` verifica la clasificación sin mutar los registros.
+
 ## Guía de venta durante las llamadas
 
 El botón **Guía de venta** abre un panel de consulta sin cambiar de contacto. Incluye tarifas de 2027, promoción, duración, logística y regalos; cuatro repertorios con Spotify y PDFs; el audio de Román, vídeos por formación/cantante, guion, mensajes y un índice de los documentos y carpetas de Drive. Permite buscar también dentro de los documentos con texto incorporado, filtrar recursos, abrir originales, copiar enlaces y solicitar una vista de archivos de Drive. La vista de Google puede requerir iniciar sesión; siempre hay enlace al original.

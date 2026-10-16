@@ -1,0 +1,18 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const source=fs.readFileSync(new URL('simple-calls.js',import.meta.url),'utf8');
+const context=vm.createContext({Date,eligible:l=>!['Reserva confirmada','No interesado'].includes(l.estado)&&l.contact_status!=='Revisar teléfono',activeLock:l=>l.lock_owner&&Number(l.lock_until)>Date.now()});
+vm.runInContext(source.slice(0,source.indexOf('(() =>')),context);
+const base={id:'a',estado:'En negociación',contact_status:'Contactado',notas:'Notas anteriores intactas',respond_id:'123',responsable:'Dani'},untouched=JSON.stringify(base);
+assert.equal(context.phoneCallDue(base),true,'Un mensaje no equivale a una llamada');
+assert.equal(context.phoneCallDue({...base,last_call:'2026-01-01T12:00:00Z',call_result:'No contesta'}),false,'Un intento antiguo no vuelve sin programarlo');
+assert.equal(context.phoneCallDue({...base,last_call:'2026-01-01T12:00:00Z',call_result:'Atendida'}),false,'Una conversación sale de Por llamar');
+assert.equal(context.phoneCallDue({...base,last_call:'2026-01-02T12:00:00Z',proxima_llamada:'2026-01-01T12:00:00Z'}),false,'Una fecha de seguimiento consumida no repite la llamada');
+assert.equal(context.phoneCallDue({...base,last_call:'2026-01-01T12:00:00Z',proxima_llamada:'2026-01-02T12:00:00Z'}),true,'Una nueva fecha vencida sí vuelve a la cola');
+assert.equal(context.phoneCallDue({...base,proxima_llamada:'2099-01-01T12:00:00Z'}),false);
+assert.equal(context.phoneCallDue({...base,estado:'No interesado'}),false);
+assert.equal(context.phoneCallDue({...base,lock_owner:'David',lock_until:Date.now()+60000}),false);
+assert.equal(context.phoneCallStage({...base,call_result:'Atendida'}),'spoken');
+assert.equal(context.phoneCallStage({...base,last_call:'2026-01-01',call_result:'No contesta'}),'attempted');
+assert.equal(JSON.stringify(base),untouched,'La clasificación no modifica ningún dato');
+const built=fs.readFileSync(new URL('AppsScriptIndex.html',import.meta.url),'utf8');assert.ok(built.includes('Guardar y pasar al siguiente'));assert.ok(built.includes('function phoneCallStage('));
+console.log('OK: cola sin repeticiones, seguimiento explícito, separación hablado/intento y datos originales intactos.');
