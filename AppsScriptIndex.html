@@ -220,6 +220,7 @@ function phoneCallDue(l){
   if(!activeLock(l)||l.lock_owner!==user){if(!await mutate('claim',l))return;}
   const current=data.leads.find(x=>x.id===l.id);openLead(current,'finish');if(action==='spoken')$('callResult').value='Atendida';if(action==='unanswered')$('callResult').value='No contesta';
  });
+ for(const id of ['search','ownerFilter','statusFilter','contactFilter'])$(id).addEventListener('input',()=>render());
  render();
 })();
 </script></body></html>

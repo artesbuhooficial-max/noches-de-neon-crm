@@ -36,4 +36,6 @@ assert.equal(vm.runInContext('data.leads[0].call_result',ui),'Atendida');
 assert.equal(vm.runInContext('phoneCallDue(data.leads[0])',ui),false);
 assert.doesNotMatch(node('queue').innerHTML,/Lucía &amp; Marcos/);
 assert.match(node('queue').innerHTML,/Sofía &amp; Jaime/);
+node('ownerFilter').value='David';node('ownerFilter').handlers.input();assert.match(node('queue').innerHTML,/Ana &amp; Pablo/);assert.doesNotMatch(node('queue').innerHTML,/Sofía &amp; Jaime/);
+node('ownerFilter').value='Dani';node('ownerFilter').handlers.input();assert.match(node('queue').innerHTML,/Sofía &amp; Jaime/);
 console.log('OK: marcar hablado → guardar → siguiente; notas e ID de respond.io conservados y contacto retirado solo de la cola.');
