@@ -17,6 +17,8 @@ fs.writeFileSync(new URL('AppsScriptIndex.html',base),hosted.replace('<script>',
 const simpleSource=fs.readFileSync(new URL('simple-calls.js',base));
 const simpleHash=crypto.createHash('sha384').update(simpleSource).digest('base64');
 const simpleVersion=crypto.createHash('sha256').update(simpleSource).digest('hex').slice(0,12);
-fs.writeFileSync(new URL('SimpleCalls.html',base),'<script src="https://artesbuhooficial-max.github.io/noches-de-neon-crm/simple-calls.js?v='+simpleVersion+'" integrity="sha384-'+simpleHash+'" crossorigin="anonymous"></script>');
+fs.mkdirSync(new URL('assets/',base),{recursive:true});
+fs.writeFileSync(new URL('assets/simple-calls.'+simpleVersion+'.js',base),simpleSource);
+fs.writeFileSync(new URL('SimpleCalls.html',base),'<script src="https://artesbuhooficial-max.github.io/noches-de-neon-crm/assets/simple-calls.'+simpleVersion+'.js" integrity="sha384-'+simpleHash+'" crossorigin="anonymous"></script>');
 console.log('HTML autónomo y archivo para Apps Script generados.');
 
