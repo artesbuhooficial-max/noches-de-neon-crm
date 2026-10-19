@@ -1,0 +1,10 @@
+import {harness} from './source-check.mjs';
+import assert from 'node:assert/strict';
+const r=Array(37).fill('');r[4]='Fecha editable';r[6]='600000009';r[15]='Nota original';
+const h=harness([['CRM'],['Comercial','','ESTADO','','NOMBRE CONTACTO','','TLF'],r]);
+let lead=h.call('list').data.leads[0];
+const save=value=>h.call('save',lead.responsable,{id:lead.id,revision:lead.revision,source_version:lead.source_version,lead:{...lead,request_at:value}});
+let result=save('2026-10-19T12:30');assert.equal(result.ok,true,result.error);lead=result.data.leads[0];assert.equal(lead.request_at,'2026-10-19T12:30:00');assert.equal(lead.notas,'Nota original');assert.equal(lead.contact_status,'Sin contactar');
+result=save('not-a-date');assert.equal(result.ok,false);assert.match(result.error,/Fecha de entrada/);
+result=save('');assert.equal(result.ok,true,result.error);assert.equal(result.data.leads[0].request_at,'');
+console.log('OK: fecha de entrada editable, validada, borrable y sin alterar estado ni notas.');

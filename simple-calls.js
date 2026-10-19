@@ -10,6 +10,13 @@ function phoneCallDue(l){
  autoCallDue=phoneCallDue;
  let scope='pending';
  const baseRender=render,baseOpen=openLead;
+ const order=document.createElement('label');order.className='entry-order';order.innerHTML='Orden de entrada <select id="entryOrder" aria-label="Orden de entrada"><option value="oldest">Más antiguos primero</option><option value="newest">Más recientes primero</option></select>';$('search').parentNode.appendChild(order);
+ $('entryOrder').value=localStorage.getItem('neon-entry-order')||'oldest';
+ newestFirst=function(a,b){const av=String(a.request_at||''),bv=String(b.request_at||'');if(!av||!bv)return av?-1:bv?1:String(a.id).localeCompare(String(b.id));return ($('entryOrder').value==='newest'?bv.localeCompare(av):av.localeCompare(bv))||String(a.id).localeCompare(String(b.id));};
+ $('entryOrder').addEventListener('change',()=>{localStorage.setItem('neon-entry-order',$('entryOrder').value);render();});
+ if(!$('leadEntry')){const label=document.createElement('label');label.innerHTML='Fecha de entrada<input id="leadEntry" type="datetime-local">';$('leadWedding').parentNode.parentNode.appendChild(label);}
+ FORM_FIELDS.leadEntry='request_at';
+
  const styles=document.createElement('style');styles.textContent=`
  .call-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 15px}.call-tabs button[aria-pressed=true]{background:var(--lime);color:#17210c;border-color:var(--lime)}
  .call-explanation{color:var(--muted);font-size:12px;line-height:1.7;margin-bottom:16px}.quick-results{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.quick-results button{flex:1;min-width:125px}
@@ -30,7 +37,7 @@ function phoneCallDue(l){
   const shown=pool.filter(show),counts={pending:pool.filter(l=>phoneCallDue(l)||activeLock(l)).length,spoken:pool.filter(l=>phoneCallStage(l)==='spoken').length,attempted:pool.filter(l=>phoneCallStage(l)==='attempted').length,all:pool.length};
   const names={pending:'Por llamar',spoken:'Ya hablamos',attempted:'Sin respuesta',all:'Todos los contactos'};
   document.querySelectorAll('[data-call-view]').forEach(b=>{const v=b.dataset.callView;b.textContent=names[v]+' · '+counts[v];b.setAttribute('aria-pressed',String(v===scope))});
-  $('callExplanation').textContent=scope==='pending'?'1. Elige un contacto. 2. Llama. 3. Marca el resultado y guarda para pasar al siguiente. Los llamados no se repiten; vuelven solo si agendas otra llamada. Los más recientes aparecen primero.':'Aquí conserváis los contactos y su seguimiento. Puedes abrir la ficha, consultar las notas o agendar una nueva llamada. No se elimina ningún registro.';
+  $('callExplanation').textContent=scope==='pending'?'1. Elige un contacto. 2. Llama. 3. Marca el resultado y guarda para pasar al siguiente. Los llamados no se repiten; vuelven solo si agendas otra llamada. El orden elegido se aplica a la lista y a la siguiente llamada. Las entradas sin fecha quedan al final.':'Aquí conserváis los contactos y su seguimiento. Puedes abrir la ficha, consultar las notas o agendar una nueva llamada. No se elimina ningún registro.';
   $('total').textContent=shown.length+' visibles · '+pool.length+' contactos conservados';
   $('queue').innerHTML=`<div class="table-wrap"><table class="call-table"><thead><tr><th>Contacto</th><th>Seguimiento</th><th>Próxima llamada</th><th>Qué quieres hacer</th></tr></thead><tbody>${shown.map(l=>{
    const mine=!l.responsable||l.responsable===user,available=mine&&eligible(l)&&(!activeLock(l)||l.lock_owner===user),locked=activeLock(l)&&l.lock_owner===user;
@@ -39,7 +46,7 @@ function phoneCallDue(l){
   const active=all.find(l=>activeLock(l)&&l.lock_owner===user),card=document.querySelector('.agent.'+user.toLowerCase()+' .agent-body');
   if(active&&card){const quick=document.createElement('div');quick.className='quick-results';quick.innerHTML=`<button class="primary" data-call-action="spoken" data-call-id="${esc(active.id)}">✓ Hemos hablado</button><button class="secondary" data-call-action="unanswered" data-call-id="${esc(active.id)}">No contesta</button><button class="secondary" data-call-action="result" data-call-id="${esc(active.id)}">Otro resultado / agendar</button>`;card.appendChild(quick);}
  };
- openLead=function(l,action='save'){baseOpen(l,action);$('leadDialog').classList.toggle('quick-call',action==='finish');if(action==='finish'){$('dialogTitle').textContent='¿Qué ha pasado con '+l.nombre+'?';$('saveLead').textContent='Guardar y pasar al siguiente';}};
+ openLead=function(l,action='save'){baseOpen(l,action);$('leadEntry').value=l?.request_at?l.request_at.slice(0,16):'';$('leadEntry').disabled=Boolean(l?.responsable&&l.responsable!==user);$('leadDialog').classList.toggle('quick-call',action==='finish');if(action==='finish'){$('dialogTitle').textContent='¿Qué ha pasado con '+l.nombre+'?';$('saveLead').textContent='Guardar y pasar al siguiente';}};
  document.addEventListener('click',async e=>{
   const view=e.target.closest('[data-call-view]');if(view){scope=view.dataset.callView;render();return;}
   const b=e.target.closest('[data-call-action]');if(!b||b.disabled)return;const l=data.leads.find(x=>x.id===b.dataset.callId);if(!l)return;const action=b.dataset.callAction;

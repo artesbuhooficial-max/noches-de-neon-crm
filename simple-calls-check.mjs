@@ -21,9 +21,15 @@ const node=id=>{if(!nodes.has(id))nodes.set(id,{value:'',innerHTML:'',textConten
 const tabs=['pending','spoken','attempted','all'].map(v=>Object.assign(node('tab-'+v),{dataset:{callView:v}}));
 for(const id of ['ownerFilter','statusFilter','contactFilter'])node(id).value='all';
 const fakeDocument={head:node('head'),documentElement:{dataset:{}},getElementById:node,createElement:()=>node('created'+nodes.size),querySelector:s=>s.includes('.duo')?{src:s.includes('Dani')?'dani.png':'david.png'}:node(s),querySelectorAll:s=>s==='[data-call-view]'?tabs:[],addEventListener:(t,f)=>{(listeners[t]??=[]).push(f)}};
+node('search').parentNode=node('filters');
 const ui=vm.createContext({document:fakeDocument,localStorage:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)},window:{addEventListener(){}},structuredClone,crypto:globalThis.crypto,URL,Blob,AbortController,atob,setInterval(){},setTimeout(){},clearTimeout(){},console});
 vm.runInContext(fs.readFileSync(new URL('app.js',import.meta.url),'utf8'),ui);
 vm.runInContext(source,ui);
+node('entryOrder').value='oldest';
+assert.equal(vm.runInContext("newestFirst({id:'a',request_at:'2026-10-01'},{id:'b',request_at:'2026-10-19'})<0",ui),true);
+assert.equal(vm.runInContext("newestFirst({id:'a',request_at:''},{id:'b',request_at:'2026-10-19'})>0",ui),true);
+node('entryOrder').value='newest';
+assert.equal(vm.runInContext("newestFirst({id:'a',request_at:'2026-10-01'},{id:'b',request_at:'2026-10-19'})>0",ui),true);
 vm.runInContext("data.leads[0].notas='Conservar nota previa';data.leads[0].respond_id='123';localMutate('claim',data.leads[0]);render()",ui);
 const button={disabled:false,dataset:{callAction:'spoken',callId:'l1'}};
 await listeners.click.at(-1)({target:{closest:s=>s==='[data-call-action]'?button:null}});
