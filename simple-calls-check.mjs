@@ -63,3 +63,8 @@ assert.match(node('queue').innerHTML,/Sofía &amp; Jaime/);
 assert.match(node('tab-scheduled').textContent,/Agendados · 1/);
 vm.runInContext('openLead(data.leads[3])',ui);assert.equal(node('leadNext').required,false);
 console.log('OK: agendar conserva resultado y notas, sale de pendientes y aparece en Agendados.');
+vm.runInContext("localMutate('claim',data.leads[3])",ui);
+await listeners.click.at(-1)({target:{closest:s=>s==='[data-call-action]'?scheduleButton:null}});
+assert.equal(node('callResult').value,'Volver a llamar');assert.equal(node('saveLead').textContent,'Guardar cita y terminar llamada');
+node('leadNext').value='2099-01-03T12:00';await node('leadForm').handlers.submit({preventDefault(){}});
+assert.equal(vm.runInContext('data.leads[3].lock_owner',ui),'');assert.equal(vm.runInContext('data.leads[3].proxima_llamada',ui),'2099-01-03T12:00');
