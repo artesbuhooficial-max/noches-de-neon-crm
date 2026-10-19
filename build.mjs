@@ -14,7 +14,7 @@ for(const name of ['dani','david']){
 }
 fs.writeFileSync(new URL('Noches-de-Neon.html',base),standalone);
 fs.writeFileSync(new URL('AppsScriptIndex.html',base),hosted.replace('<script>','<script>window.NEON_ENDPOINT=__NEON_SERVER_ENDPOINT__;window.NEON_SHEET_URL=__NEON_SHEET_URL__;</script><script>'));
-const simpleSource=fs.readFileSync(new URL('simple-calls.js',base));
+const simpleSource=Buffer.from(fs.readFileSync(new URL('simple-calls.js',base),'utf8').replace(/\r\n/g,'\n'),'utf8');
 const simpleHash=crypto.createHash('sha384').update(simpleSource).digest('base64');
 const simpleVersion=crypto.createHash('sha256').update(simpleSource).digest('hex').slice(0,12);
 fs.mkdirSync(new URL('assets/',base),{recursive:true});
